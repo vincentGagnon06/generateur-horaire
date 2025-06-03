@@ -1,3 +1,9 @@
+"""
+Auteur : Vincent Gagnon
+Date : Juin 2025
+Ce fichier contient les fonctions permettant d'afficher et de gérer l'interface d'ajouts de cours.
+"""
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 from generateur import Cours, GroupeHoraire

@@ -1,3 +1,9 @@
+"""
+Auteur : Vincent Gagnon
+Date : Juin 2025
+Ce fichier contient les classes d'exceptions utilisées dans l'application.
+"""
+
 class HeureHorsLimitesError(Exception):
     """Exception levée lorsque l'heure est en dehors de la plage autorisée (8h à 19h)."""
     pass

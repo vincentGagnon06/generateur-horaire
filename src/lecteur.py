@@ -1,3 +1,9 @@
+"""
+Auteur : Vincent Gagnon
+Date : Juin 2025
+Ce fichier permet de gérer les données contenues dans le fichier cours.json.
+"""
+
 import os
 import json
 from tkinter import messagebox

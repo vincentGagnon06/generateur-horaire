@@ -6,7 +6,7 @@ Cette application permet de générer automatiquement tous les horaires possible
 
 ### Pour **macOS**
 
-1. Téléchargez le fichier `.zip` pour macOS.
+1. Téléchargez le fichier `GenerateurHoraire_macOS.zip`.
 2. Décompressez le fichier zip.
 3. Faites un **clic droit** sur le fichier `GenerateurHoraire.app`, puis sélectionnez **Ouvrir**. GateKeeper va empêcher d'ouvrir le fichier puisqu'il n'a pas de license.
 4. Allez dans **Réglages**, sous **Confidentialité et sécurité**. Vers le bas de la page, vous devriez voir le fichier GenerateurHoraire. Cliquez sur **Ouvrir**, puis **Ouvrir malgré tout**.
@@ -17,7 +17,7 @@ Cette application permet de générer automatiquement tous les horaires possible
 
 ### Pour **Windows**
 
-1. Téléchargez le fichier `.zip` pour Windows.
+1. Téléchargez le fichier `GenerateurHoraire_windows.zip`.
 2. Décompressez le fichier zip.
 3. Double-cliquez sur `GenerateurHoraire.exe`.
 4. Si Windows affiche un avertissement de sécurité, cliquez sur **Informations supplémentaires** puis **Exécuter quand même**.

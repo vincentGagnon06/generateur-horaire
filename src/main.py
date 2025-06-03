@@ -1,3 +1,9 @@
+"""
+Auteur : Vincent Gagnon
+Date : Juin 2025
+Ce fichier initialise et lance l'application.
+"""
+
 import tkinter as tk
 from fenetre_generation import FenetreGeneration
 from fenetre_horaire import FenetreHoraire

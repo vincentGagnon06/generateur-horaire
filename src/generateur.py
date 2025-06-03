@@ -1,3 +1,9 @@
+"""
+Auteur : Vincent Gagnon
+Date : Juin 2025
+Ce fichier permet générer les horaires.
+"""
+
 class Cours:
     def __init__(self, sigle, nom, obligatoire=True):
         self.sigle = sigle

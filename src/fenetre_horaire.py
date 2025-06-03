@@ -1,3 +1,9 @@
+"""
+Auteur : Vincent Gagnon
+Date : Juin 2025
+Ce fichier permet de gérer l'interface de création des horaires.
+"""
+
 import tkinter as tk
 from tkinter import ttk
 from generateur import GroupeHoraire

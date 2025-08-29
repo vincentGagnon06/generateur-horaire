@@ -10,7 +10,7 @@ from tkinter import messagebox
 from generateur import Cours, GroupeHoraire
 
 # Chemin du dossier cible
-DOSSIER_COURS = os.path.expanduser("~/Downloads/GenerateurHoraire")
+DOSSIER_COURS = os.path.expanduser("~/Downloads/Generateur_Horaire")
 FICHIER_COURS = os.path.join(DOSSIER_COURS, "cours.json")
 
 def _verifier_dossier():

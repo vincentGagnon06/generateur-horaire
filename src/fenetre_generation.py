@@ -8,7 +8,6 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from generateur import Cours, GroupeHoraire
 import lecteur
-from exceptions import MinuteInvalideError, HeureHorsLimitesError, ValeurNonEntreeError
 
 class FenetreGeneration(tk.Frame):
     def __init__(self, master, changer_fenetre):
@@ -17,7 +16,7 @@ class FenetreGeneration(tk.Frame):
 
         self.cours_obligatoires = []
         self.cours_optionnels = []
-        self.groupes_temp = {}
+        self.groupes_temp = []
 
         self.setup_ui()
         self.initialiser_cours()
@@ -45,16 +44,16 @@ class FenetreGeneration(tk.Frame):
             return e
 
         label(0, "Sigle:")
-        self.entree_sigle = entry(0)
+        self.entry_sigle = entry(0)
         label(1, "Nom:")
-        self.entree_nom = entry(1)
+        self.entry_nom = entry(1)
 
         self.var_obligatoire = tk.BooleanVar(value=True)
         ttk.Checkbutton(frame, text="Obligatoire", variable=self.var_obligatoire).grid(row=2, column=0, columnspan=2)
         ttk.Separator(frame, orient="horizontal").grid(row=3, column=0, columnspan=2, sticky="ew", pady=5)
 
         label(4, "Nom du groupe:")
-        self.entree_nom_groupe = entry(4)
+        self.entry_nom_groupe = entry(4)
 
         self.frame_plages = ttk.LabelFrame(frame, text="Plages horaires")
         self.frame_plages.grid(row=5, column=0, columnspan=2, sticky="ew", pady=5)
@@ -65,6 +64,7 @@ class FenetreGeneration(tk.Frame):
 
         self.lignes_plages = []
         ttk.Button(self.frame_plages, text="Ajouter une ligne", command=self.ajouter_ligne_plage).grid(row=999, column=0, columnspan=3, pady=3)
+        ttk.Button(self.frame_plages, text="Retirer la dernière ligne", command=self.retirer_ligne_plage).grid(row=1000, column=0, columnspan=3, pady=3)
 
         ttk.Button(frame, text="Ajouter groupe au cours", command=self.ajouter_groupe).grid(row=6, column=0, columnspan=2, pady=2)
         ttk.Button(frame, text="Réinitialiser le groupe", command=self.reinitialiser_groupe).grid(row=7, column=0, columnspan=2, pady=(0, 5))
@@ -112,17 +112,20 @@ class FenetreGeneration(tk.Frame):
         frame.grid(row=8, column=0, sticky="ew", padx=10, pady=10)
         frame.columnconfigure(1, weight=1)
 
-        ttk.Label(frame, text="Nombre de cours optionnels:").grid(row=0, column=0, sticky="e")
-        self.entree_nb_cours_option = ttk.Entry(frame)
-        self.entree_nb_cours_option.grid(row=0, column=1, sticky="ew")
+        ttk.Label(frame, text="Nombre de cours optionnels à inclure:").grid(row=0, column=0, sticky="e")
+        self.entry_nb_cours_option = ttk.Entry(frame)
+        self.entry_nb_cours_option.grid(row=0, column=1, sticky="ew")
+        self.entry_nb_cours_option.insert(0, "0")
 
         ttk.Button(frame, text="Générer les horaires", command=self.generer_horaires).grid(row=1, column=0, columnspan=2, pady=(0, 10))
 
     def generer_horaires(self):
         try:
-            nb_cours_optionnels = int(self.entree_nb_cours_option.get().strip())
+            nb_cours_optionnels = int(self.entry_nb_cours_option.get().strip())
             if not 0 <= nb_cours_optionnels <= len(self.cours_optionnels):
                 raise ValueError("Nombre hors limites")
+            
+            self.sauvegarder_cours(afficher_message=False)
             self.changer_fenetre("horaire", nb_cours_optionnels=nb_cours_optionnels)
 
         except ValueError:
@@ -172,148 +175,148 @@ class FenetreGeneration(tk.Frame):
 
     def ajouter_ligne_plage(self):
         row = len(self.lignes_plages) + 1
-        jour = ttk.Entry(self.frame_plages, justify="center")
-        debut = ttk.Entry(self.frame_plages, justify="center")
-        fin = ttk.Entry(self.frame_plages, justify="center")
 
+        # Jour en liste déroulante
+        jours = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"]
+        jour = ttk.Combobox(self.frame_plages, values=jours, state="readonly", justify="center")
+
+        # Heure début
+        frame_debut = ttk.Frame(self.frame_plages)
+        entry_heure_debut = ttk.Entry(frame_debut, width=2, justify="center")
+        entry_minute_debut = ttk.Entry(frame_debut, width=2, justify="center")
+        entry_minute_debut.insert(0, "00")
+
+        entry_heure_debut.pack(side="left")
+        ttk.Label(frame_debut, text="h").pack(side="left")
+        entry_minute_debut.pack(side="left")
+
+        # Heure fin
+        frame_fin = ttk.Frame(self.frame_plages)
+        entry_heure_fin = ttk.Entry(frame_fin, width=2, justify="center")
+        entry_minute_fin = ttk.Entry(frame_fin, width=2, justify="center")
+        entry_minute_fin.insert(0, "00")
+
+        entry_heure_fin.pack(side="left")
+        ttk.Label(frame_fin, text="h").pack(side="left")
+        entry_minute_fin.pack(side="left")
+
+        # Placement dans la grille
         jour.grid(row=row, column=0, sticky="ew", padx=2, pady=1)
-        debut.grid(row=row, column=1, sticky="ew", padx=2, pady=1)
-        fin.grid(row=row, column=2, sticky="ew", padx=2, pady=1)
+        frame_debut.grid(row=row, column=1, padx=2, pady=1)
+        frame_fin.grid(row=row, column=2, padx=2, pady=1)
 
-        self.lignes_plages.append((jour, debut, fin))
+        # Sauvegarde dans la liste des lignes
+        self.lignes_plages.append((jour, frame_debut, frame_fin))
 
-    def reinitialiser_groupe(self):
-        confirmation = self.demander_confirmation("Êtes-vous certain de vouloir supprimer ce groupe? Cette action est irréversible.")
-        if not confirmation:
-            return
+    def retirer_ligne_plage(self):
+        for champ in self.lignes_plages[-1]:
+            champ.destroy()
+        self.lignes_plages.pop(-1)
 
-        self.entree_nom_groupe.delete(0, tk.END)
+    def reinitialiser_groupe(self, demander_confirmation=True):
+        if demander_confirmation:
+            confirmation = self.demander_confirmation("Êtes-vous certain de vouloir supprimer ce groupe? Cette action est irréversible.")
+            if not confirmation:
+                return
+            
+        self.entry_nom_groupe.delete(0, tk.END)
         for e in self.lignes_plages:
             for champ in e:
                 champ.destroy()
         self.lignes_plages.clear()
+        self.label_groupes_temp.config(text=f"Groupes ajoutés : {len(self.groupes_temp)}")
 
     def ajouter_groupe(self):
-        def parse_heure(valeur):
-            valeur = valeur.strip() 
-            
-            try:
-                if valeur == "":
-                    raise ValeurNonEntreeError("Valeur non entrée")
-
-                if ":" in valeur or "h" in valeur:
-                    splitChar = ":" if ":" in valeur else "h"
-                    heures, minutes = map(int, valeur.split(splitChar))
-                    
-                    sHeures, sMinutes = valeur.split(splitChar)
-                    if len(sHeures) > 2 or len(sMinutes) != 2:
-                        raise ValueError("Longueurs invalides")
-                        
-                    if not 0 <= minutes < 60:
-                        raise MinuteInvalideError("Minutes invalides")
-
-                    if not 8 <= heures + minutes / 60 <= 20:
-                        raise HeureHorsLimitesError("Heure hors limites")
-                    return heures + minutes / 60
-                else:
-                    heure_float = float(valeur)
-                    if not 8 <= heure_float <= 20:
-                        raise HeureHorsLimitesError("Heure hors limites")
-                    return heure_float
-                
-            except MinuteInvalideError:
-                messagebox.showerror("Erreur", "Veuillez entrer des minutes entre 0 et 60.")   
-            except ValeurNonEntreeError:
-                messagebox.showerror("Erreur", "Veuillez entrer une heure de début et de fin.")
-            except HeureHorsLimitesError:
-                messagebox.showerror("Erreur", "L'heure doit être comprise entre 8h et 20h.")
-            except (ValueError, TypeError):
-                messagebox.showerror("Erreur", "Format invalide pour l'heure (attendu HH:MM en format 24h ou seulement l'heure)")
-
-        nom = self.entree_nom_groupe.get().strip()
+        nom = self.entry_nom_groupe.get().strip()
         if not nom:
             messagebox.showerror("Erreur", "Le nom du groupe est requis.")
             return
-
-        if nom in self.groupes_temp:
-            messagebox.showerror("Doublon", f"Un groupe nommé « {nom} » a déjà été ajouté à ce cours.")
+        
+        if any(g.nom_groupe.lower() == nom.lower() for g in self.groupes_temp):
+            messagebox.showerror("Erreur", f"Un groupe ayant le nom {nom} à déjà été ajouté.")
             return
 
         groupe = GroupeHoraire(nom)
 
-        for jour_e, debut_e, fin_e in self.lignes_plages:
-            jour = jour_e.get().strip().lower()
-            jours = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"]
-            if jour not in jours:
-                messagebox.showerror("Erreur", "Le jour entré est invalide.")
+        for jour_cb, frame_debut, frame_fin in self.lignes_plages:
+            jour = jour_cb.get().strip().lower()
+
+            enfants_debut = frame_debut.winfo_children()
+            h_debut_e = enfants_debut[0]
+            m_debut_e = enfants_debut[1]
+
+            enfants_fin = frame_fin.winfo_children()
+            h_fin_e = enfants_fin[0]
+            m_fin_e = enfants_fin[1]
+
+            if not jour:
+                messagebox.showerror("Erreur", "Veuillez sélectionner un jour.")
                 return
 
-            debut = parse_heure(debut_e.get())
-            if debut is None:
+            try:
+                h_debut = int(h_debut_e.get())
+                m_debut = int(m_debut_e.get())
+                h_fin = int(h_fin_e.get())
+                m_fin = int(m_fin_e.get())
+            except ValueError:
+                messagebox.showerror("Erreur", "Les heures et minutes doivent être des nombres.")
                 return
 
-            fin = parse_heure(fin_e.get())
-            if fin is None:
+            if not (0 <= m_debut < 60 and 0 <= m_fin < 60):
+                messagebox.showerror("Erreur", "Les minutes doivent être entre 0 et 59.")
                 return
-            
+
+            debut = h_debut + m_debut / 60
+            fin = h_fin + m_fin / 60
+
+            if not 8 <= debut <= 20 or not 8 <= fin <= 20:
+                messagebox.showerror("Erreur", "Les heures doivent être entre 8h00 et 20h00.")
+                return
+
             if debut >= fin:
                 messagebox.showerror("Erreur", "L'heure de début doit être inférieure à l'heure de fin.")
                 return
-            
+
             groupe.plages.append((jour, debut, fin))
 
         if not groupe.plages:
             messagebox.showerror("Erreur", "Aucune plage horaire définie pour ce groupe.")
             return
 
-        self.groupes_temp[nom] = groupe
+        self.groupes_temp.append(groupe)
         messagebox.showinfo("Ajouté", f"Groupe {nom} ajouté au cours.")
-        self.entree_nom_groupe.delete(0, tk.END)
-        self.label_groupes_temp.config(text=f"Groupes ajoutés : {len(self.groupes_temp)}")
 
-        # Nettoyage
-        for e in self.lignes_plages:
-            for champ in e:
-                champ.destroy()
-        self.lignes_plages.clear()
+        self.reinitialiser_groupe(demander_confirmation=False)
 
-    def reinitialiser_cours(self):
-        confirmation = self.demander_confirmation("Êtes-vous certain de vouloir supprimer tous les groupes de ce cours? Cette action est irréversible.")
-        if not confirmation:
-            return
+    def reinitialiser_cours(self, demander_confirmation=True):
+        if demander_confirmation:
+            confirmation = self.demander_confirmation("Êtes-vous certain de vouloir supprimer tous les groupes de ce cours? Cette action est irréversible.")
+            if not confirmation:
+                return
 
-        self.entree_sigle.delete(0, tk.END)
-        self.entree_nom.delete(0, tk.END)
+        self.entry_sigle.delete(0, tk.END)
+        self.entry_nom.delete(0, tk.END)
         self.var_obligatoire.set(True)
 
         self.groupes_temp.clear()
-        self.label_groupes_temp.config(text="Groupes ajoutés : 0")
-
-        self.entree_nom_groupe.delete(0, tk.END)
-        for e in self.lignes_plages:
-            for champ in e:
-                champ.destroy()
-        self.lignes_plages.clear()
+        self.reinitialiser_groupe(demander_confirmation=False)
 
     def ajouter_cours(self):
-        sigle = self.entree_sigle.get().strip()
-        nom = self.entree_nom.get().strip()
+        sigle = self.entry_sigle.get().strip()
+        nom = self.entry_nom.get().strip()
         obligatoire = self.var_obligatoire.get()
 
         if not sigle or not nom:
             messagebox.showerror("Erreur", "Tous les champs doivent être remplis.")
             return
-
-        for cours in self.cours_obligatoires + self.cours_optionnels:
-            if cours.sigle.lower() == sigle.lower():
-                messagebox.showerror("Doublon", f"Un cours avec le sigle « {sigle} » existe déjà.")
-                return
-            if cours.nom.lower() == nom.lower():
-                messagebox.showerror("Doublon", f"Un cours avec le nom « {nom} » existe déjà.")
-                return
+        
+        cours_existants = self.cours_obligatoires + self.cours_optionnels
+        if any(c.nom.lower() == nom.lower() or c.sigle.lower() == sigle.lower() for c in cours_existants):
+            messagebox.showerror("Erreur", f"Un cours ayant le sigle {sigle} ou le même nom {nom} à déjà été ajouté.")
+            return
 
         cours = Cours(sigle, nom, obligatoire)
-        for groupe in self.groupes_temp.values():
+        for groupe in self.groupes_temp:
             cours.add_groupe(groupe)
 
         if obligatoire:
@@ -323,12 +326,7 @@ class FenetreGeneration(tk.Frame):
             self.cours_optionnels.append(cours)
             self.liste_optionnels.insert(tk.END, str(cours))
 
-        # Réinitialisation
-        self.entree_sigle.delete(0, tk.END)
-        self.entree_nom.delete(0, tk.END)
-        self.var_obligatoire.set(True)
-        self.groupes_temp.clear()
-        self.label_groupes_temp.config(text="Groupes ajoutés : 0")
+        self.reinitialiser_cours(demander_confirmation=False)
 
     def sauvegarder_cours(self, afficher_message=True):
         def cours_to_dict(c):
